@@ -1,8 +1,7 @@
 Flask
 gunicorn
-pdf2image
-pillow
-pandas
 google-generativeai
+pandas
+PyMuPDF
 
 

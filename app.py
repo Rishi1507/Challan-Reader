@@ -9,8 +9,7 @@ from pathlib import Path
 
 from flask import Flask, request, jsonify
 import pandas as pd
-from pdf2image import convert_from_path
-from PIL import Image
+import fitz  # PyMuPDF
 import mimetypes
 import google.generativeai as genai
 
@@ -80,21 +79,29 @@ def parse_json_from_response(response_text):
     return None
 
 def extract_text_from_pdf(pdf_path):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        pages = convert_from_path(pdf_path, dpi=300, poppler_path=r"D:\\Rishi Devs\\Delivery Challan Reader\\poppler\\Library\\bin")
-        results = []
-        for i, page in enumerate(pages, start=1):
-            img_path = os.path.join(temp_dir, f"page_{i}.png")
-            page.save(img_path, "PNG")
+    results = []
+    with fitz.open(pdf_path) as doc:
+        for i, page in enumerate(doc, start=1):
+            pix = page.get_pixmap(dpi=300)
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as img_file:
+                img_path = img_file.name
+                pix.save(img_path)
+
             mime_type, _ = mimetypes.guess_type(img_path)
             img_data = Path(img_path).read_bytes()
             try:
-                response = model.generate_content([system_prompt, {"mime_type": mime_type, "data": img_data}, user_prompt])
+                response = model.generate_content([
+                    system_prompt,
+                    {"mime_type": mime_type, "data": img_data},
+                    user_prompt
+                ])
                 if response.text:
                     results.append(response.text)
             except Exception as e:
                 print(f"❌ Error on page {i}: {e}")
-        return results
+            finally:
+                os.remove(img_path)
+    return results
 
 @app.route("/")
 def home():
@@ -111,7 +118,7 @@ def extract():
 
     # Save PDF to a temp file and close it before processing
     tmp_fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
-    os.close(tmp_fd)  # 🔐 Close the open file descriptor
+    os.close(tmp_fd)
     pdf_file.save(tmp_path)
 
     try:
@@ -123,7 +130,7 @@ def extract():
                 data.extend(parsed)
         return jsonify({"status": "success", "data": data})
     finally:
-        os.unlink(tmp_path)  # ✅ Safe to delete now
+        os.unlink(tmp_path)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

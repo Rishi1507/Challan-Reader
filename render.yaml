@@ -7,5 +7,6 @@ services:
       pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
-       - key: AIzaSyBWusjPVh5FOzhFhb3EHwWJJvjcOWe4LOs
+       - key: AIzaSyAwIMpmWLoP2CvELZd_9aTkwlTDCBm0-oY
          value: rishi
+

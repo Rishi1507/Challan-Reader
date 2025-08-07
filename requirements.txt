@@ -3,5 +3,10 @@ gunicorn
 google-generativeai
 pandas
 PyMuPDF
+streamlit
+requests
+openpyxl
+
+
 
 

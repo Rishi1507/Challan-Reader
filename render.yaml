@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: firc-extractor-api
+    runtime: python
+    buildCommand: |
+      apt-get update && apt-get install -y poppler-utils
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+       - key: AIzaSyBWusjPVh5FOzhFhb3EHwWJJvjcOWe4LOs
+         value: rishi
